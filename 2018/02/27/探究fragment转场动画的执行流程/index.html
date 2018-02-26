@@ -79,12 +79,16 @@
 
 
 
-<meta property="og:type" content="website">
+<meta name="description" content="##探究fragment转场动画的执行流程 ###我们都知道fragment可以设置它的转场动画，来实现fragment之间的切换的动画效果。如下代码：12345FragmentManager fragmentManager = getSupportFragmentManager();FragmentTransaction fragmentTransaction = fragmentManager">
+<meta property="og:type" content="article">
 <meta property="og:title" content="Hexo">
-<meta property="og:url" content="https://qlrishui.github.io/index.html">
+<meta property="og:url" content="https://qlrishui.github.io/2018/02/27/探究fragment转场动画的执行流程/index.html">
 <meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="##探究fragment转场动画的执行流程 ###我们都知道fragment可以设置它的转场动画，来实现fragment之间的切换的动画效果。如下代码：12345FragmentManager fragmentManager = getSupportFragmentManager();FragmentTransaction fragmentTransaction = fragmentManager">
+<meta property="og:updated_time" content="2018-02-26T19:59:49.154Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Hexo">
+<meta name="twitter:description" content="##探究fragment转场动画的执行流程 ###我们都知道fragment可以设置它的转场动画，来实现fragment之间的切换的动画效果。如下代码：12345FragmentManager fragmentManager = getSupportFragmentManager();FragmentTransaction fragmentTransaction = fragmentManager">
 
 
 
@@ -114,13 +118,13 @@
 
 
 
-  <link rel="canonical" href="https://qlrishui.github.io/"/>
+  <link rel="canonical" href="https://qlrishui.github.io/2018/02/27/探究fragment转场动画的执行流程/"/>
 
 
 
 
 
-  <title>Hexo</title>
+  <title> | Hexo</title>
   
 
 
@@ -139,8 +143,7 @@
     
   
 
-  <div class="container sidebar-position-left 
-  page-home">
+  <div class="container sidebar-position-left page-post-detail">
     <div class="headband"></div>
 
     <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
@@ -213,275 +216,9 @@
         <div class="content-wrap">
           <div id="content" class="content">
             
-  <section id="posts" class="posts-expand">
+
+  <div id="posts" class="posts-expand">
     
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://qlrishui.github.io/qinlingrong.github.io/2018/02/27/hook Instrumentation 实现对Activity生命周期的监听/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="John Doe">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/qinlingrong.github.io/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/qinlingrong.github.io/2018/02/27/hook Instrumentation 实现对Activity生命周期的监听/" itemprop="url">Untitled</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">Posted on</span>
-              
-              <time title="Post created" itemprop="dateCreated datePublished" datetime="2018-02-27T05:04:20+08:00">
-                2018-02-27
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>##hook Instrumentation 实现对Activity生命周期的监听</p>
-<p>###如何hook主线程<br>首先要先找对hook的点，在Application中有一个隐藏的mLoadedApk，它在Application之初便保存了程序的所有信息mLoadedApk = ContextImpl.getImpl(context).mPackageInfo;我们可以看到这个LoadedApk里包含了ActivityThread，这个ActivityThread里又有一个sCurrentActivityThread，sCurrentActivityThread指的是他自己本身，所以这个sCurrentActivityThread就是我们想要hook住的主线程对象，在这个主线程对象里我们又可以hook他的Instrumentation对象以实现对activity对象的各个生命周期的回调的监听。</p>
-<p>如代码所示，我们需要在Application启动时去替换主线程的Instrumentation:</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line">package com.example.zhanqian.myapplication;</span><br><span class="line">import android.app.Activity;</span><br><span class="line">import android.app.Application;</span><br><span class="line">import android.app.Instrumentation;</span><br><span class="line">import android.util.Log;</span><br><span class="line">import java.lang.reflect.Field;</span><br><span class="line">import java.lang.reflect.InvocationTargetException;</span><br><span class="line">import java.lang.reflect.Method;</span><br><span class="line">/**</span><br><span class="line"> * Created by zhangqian on 2016/5/27.</span><br><span class="line"> */</span><br><span class="line">public class MyApplication extends Application &#123;</span><br><span class="line">    @Override</span><br><span class="line">    public void onCreate() &#123;</span><br><span class="line">        super.onCreate();</span><br><span class="line">        try &#123;</span><br><span class="line">            hookActivity(this);</span><br><span class="line">        &#125; catch (NoSuchFieldException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; catch (IllegalAccessException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; catch (NoSuchMethodException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; catch (InvocationTargetException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    public void hookActivity( Application application) throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException &#123;</span><br><span class="line">        Class&lt;?&gt; clz = application.getClass();</span><br><span class="line">        Field field = clz.getField(&quot;mLoadedApk&quot;);</span><br><span class="line">        field.setAccessible(true);</span><br><span class="line">        Class &lt;?&gt; clzz = field.getType();</span><br><span class="line">        Field threadF = clzz.getDeclaredField(&quot;mActivityThread&quot;);</span><br><span class="line">        threadF.setAccessible(true);</span><br><span class="line">        Class&lt;?&gt; thread = threadF.getType();</span><br><span class="line">        Method currentActivityThread= thread.getDeclaredMethod(&quot;currentActivityThread&quot;);</span><br><span class="line">        currentActivityThread.setAccessible(true);</span><br><span class="line">        /**获取主线程对象**/</span><br><span class="line">        Object activityThreadObject=currentActivityThread.invoke(null);</span><br><span class="line">        Field mInstrumentationField = thread.getDeclaredField(&quot;mInstrumentation&quot;);</span><br><span class="line">        mInstrumentationField.setAccessible(true);</span><br><span class="line">        Instrumentation mInsertInstrumentation = new InsertInstrumentation();</span><br><span class="line">        mInstrumentationField.set(activityThreadObject,mInsertInstrumentation);</span><br><span class="line">    &#125;</span><br><span class="line">    private static class InsertInstrumentation extends android.app.Instrumentation&#123;</span><br><span class="line">        @Override</span><br><span class="line">        public void callActivityOnResume(Activity activity) &#123;</span><br><span class="line">            super.callActivityOnResume(activity);</span><br><span class="line">            Log.i(&quot;qinlingrong&quot;,&quot;---------------hook Activity OnResume -----------------&quot;);</span><br><span class="line">        &#125;</span><br><span class="line">        @Override</span><br><span class="line">        public void callActivityOnPause(Activity activity) &#123;</span><br><span class="line">            super.callActivityOnPause(activity);</span><br><span class="line">            Log.i(&quot;qinlingrong&quot;,&quot;---------------hook Activity OnPause -----------------&quot;);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://qlrishui.github.io/qinlingrong.github.io/2018/02/27/android屏幕解锁新解/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="John Doe">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/qinlingrong.github.io/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/qinlingrong.github.io/2018/02/27/android屏幕解锁新解/" itemprop="url">Untitled</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">Posted on</span>
-              
-              <time title="Post created" itemprop="dateCreated datePublished" datetime="2018-02-27T04:11:16+08:00">
-                2018-02-27
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>##android屏幕解锁新解</p>
-<p>最近因为一些事接触到android屏幕解锁这块，刚开始查询网上资料，绝大部分以keyguardLock 来进行获取屏幕锁和接触屏幕锁，其思路如下：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"> KeyguardManager keyguardManager = (KeyguardManager)getSystemService(KEYGUARD_SERVICE); </span><br><span class="line">KeyguardLock keyguardLock = keyguardManager.newKeyguardLock(&quot;glapp&quot;);</span><br><span class="line"> keyguardLock.disableKeyguard();</span><br><span class="line">获取当前屏幕锁并解锁；</span><br><span class="line"></span><br><span class="line">KeyguardManager keyguardManager = (KeyguardManager)getSystemService(KEYGUARD_SERVICE); </span><br><span class="line"> KeyguardLock keyguardLock = keyguardManager.newKeyguardLock(&quot;glapp&quot;); keyguardLock.reenableKeyguard();</span><br></pre></td></tr></table></figure>
-<p>然后在相应位置 释放持有的屏幕锁</p>
-<p>但是这个思路有一个问题，在最后一次退出应用的时候由于释放的屏幕锁被系统回收，系统会再次锁屏，造成不好的用户体验，</p>
-<p>经过翻阅api，发现有一个更好的解决方式：</p>
-<p>在window对象中，存在这样一个flags ：WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD</p>
-<p>位于 package android.view.WindowManager中。</p>
-<p>其注释如下：</p>
-<pre><code>/** Window flag: when set the window will cause the keyguard to
- * be dismissed, only if it is not a secure lock keyguard.  Because such
- * a keyguard is not needed for security, it will never re-appear if
- * the user navigates to another window (in contrast to
- * {@link #FLAG_SHOW_WHEN_LOCKED}, which will only temporarily
- * hide both secure and non-secure keyguards but ensure they reappear
- * when the user moves to another UI that doesn&apos;t hide them).
- * If the keyguard is currently active and is secure (requires an
- * unlock pattern) than the user will still need to confirm it before
- * seeing this window, unless {@link #FLAG_SHOW_WHEN_LOCKED} has
- * also been set.
- */
-public static final int FLAG_DISMISS_KEYGUARD = 0x00400000;
-</code></pre><p>其大意为：</p>
-<p>窗口的标志： 当键盘锁不是安全的的时候（即基本的屏幕锁）设置该flags后该窗口显示会导致键盘锁被解锁。因为这种键盘锁不需要用于安全，如果用户导航到另一个窗口,它(键盘锁)将永远不会重新出现（相对于{@link #FLAG_SHOW_WHEN_LOCKED}，这只是暂时隐藏安全和非安全的 keyguards，但r如果系统确保当用户移到另一个用户界面（即不在这个应用中），并不设置他们显示方式的时候，它们（键盘锁）又会出现（即键盘锁又恢复到了原来的正常状态而不是被获取释放等等））。如果键盘锁当前处于活动状态，并且是安全的 （比如手势屏幕解锁图案） 用户在看到自己的界面前仍然将需要进行解锁，除非用户还设置了 {@link #FLAG_SHOW_WHEN_LOCKED}。</p>
-<p>So 用法如下 在你的oncreate()方法中，在你setContentView之前<br>你只需要为 window 添加相应flags：<br>getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON|WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);<br>setContentView(R.layout.lockscreen);<br>即可大功告成！</p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
 
   
 
@@ -511,9 +248,7 @@ public static final int FLAG_DISMISS_KEYGUARD = 0x00400000;
 
         
         
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/qinlingrong.github.io/2018/02/27/探究fragment转场动画的执行流程/" itemprop="url">Untitled</a></h1>
+          <h1 class="post-title" itemprop="name headline"></h1>
         
 
         <div class="post-meta">
@@ -563,9 +298,7 @@ public static final int FLAG_DISMISS_KEYGUARD = 0x00400000;
       
 
       
-        
-          
-            <p>##探究fragment转场动画的执行流程</p>
+        <p>##探究fragment转场动画的执行流程</p>
 <p>###我们都知道fragment可以设置它的转场动画，来实现fragment之间的切换的动画效果。如下代码：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">FragmentManager fragmentManager = getSupportFragmentManager();</span><br><span class="line">FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();</span><br><span class="line">fragmentTransaction.setCustomAnimations(R.anim.menushow,R.anim.menuhide);</span><br><span class="line">fragmentTransaction.add(R.id.ad_container,new ClsInfoFragment(),&quot;tag1&quot;);</span><br><span class="line">fragmentTransaction.commitAllowingStateLoss();</span><br></pre></td></tr></table></figure></p>
 <p>这样简单几句话就可以实现fragment之间的切换效果动画，那其中都经历了什么，我们来跟踪源码看一看流程是怎么走的。</p>
 <p>我们先从setCustomAnimations（int enter, int exit）走起，进入源码可见这是一个抽象方法，属于抽象类FragmentTransaction，需要注意的是，此处的exit动画并不适用于出栈动画，如果你试图在这使用它做一个出栈动画是无效的，出栈动画需要用另一个方法<br>setCustomAnimations(enter, exit, popEnter, popExit),第四个参数才是设置出栈动画</p>
@@ -603,8 +336,6 @@ public static final int FLAG_DISMISS_KEYGUARD = 0x00400000;
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line">void executePopOps(boolean moveToState) &#123;</span><br><span class="line">    for (int opNum = mOps.size() - 1; opNum &gt;= 0; opNum--) &#123;</span><br><span class="line">        final Op op = mOps.get(opNum);</span><br><span class="line">        Fragment f = op.fragment;</span><br><span class="line">        if (f != null) &#123;</span><br><span class="line">            f.setNextTransition(FragmentManagerImpl.reverseTransit(mTransition),</span><br><span class="line">                    mTransitionStyle);</span><br><span class="line">        &#125;</span><br><span class="line">        switch (op.cmd) &#123;</span><br><span class="line">            case OP_ADD:</span><br><span class="line">                f.setNextAnim(op.popExitAnim);</span><br><span class="line">                mManager.removeFragment(f);</span><br><span class="line">                break;</span><br><span class="line">            case OP_REMOVE:</span><br><span class="line">                f.setNextAnim(op.popEnterAnim);</span><br><span class="line">                mManager.addFragment(f, false);</span><br><span class="line">                break;</span><br><span class="line">            case OP_HIDE:</span><br><span class="line">                f.setNextAnim(op.popEnterAnim);</span><br><span class="line">                mManager.showFragment(f);</span><br><span class="line">                break;</span><br><span class="line">            case OP_SHOW:</span><br><span class="line">                f.setNextAnim(op.popExitAnim);</span><br><span class="line">                mManager.hideFragment(f);</span><br><span class="line">                break;</span><br><span class="line">            case OP_DETACH:</span><br><span class="line">                f.setNextAnim(op.popEnterAnim);</span><br><span class="line">                mManager.attachFragment(f);</span><br><span class="line">                break;</span><br><span class="line">            case OP_ATTACH:</span><br><span class="line">                f.setNextAnim(op.popExitAnim);</span><br><span class="line">                mManager.detachFragment(f);</span><br><span class="line">                break;</span><br><span class="line">            case OP_SET_PRIMARY_NAV:</span><br><span class="line">                mManager.setPrimaryNavigationFragment(null);</span><br><span class="line">                break;</span><br><span class="line">            case OP_UNSET_PRIMARY_NAV:</span><br><span class="line">                mManager.setPrimaryNavigationFragment(f);</span><br><span class="line">                break;</span><br><span class="line">            default:</span><br><span class="line">                throw new IllegalArgumentException(&quot;Unknown cmd: &quot; + op.cmd);</span><br><span class="line">        &#125;</span><br><span class="line">        if (!mReorderingAllowed &amp;&amp; op.cmd != OP_REMOVE &amp;&amp; f != null) &#123;</span><br><span class="line">            mManager.moveFragmentToExpectedState(f);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    if (!mReorderingAllowed &amp;&amp; moveToState) &#123;</span><br><span class="line">        mManager.moveToState(mManager.mCurState, true);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>当fragmentmanager在moveToState或者completeShowHideFragment等操作时，都会去调用getNextAnim方法获得动画对象，或者通过loadAnimation方法去间接调用getNextAnim方法获得动画对象，最终在后续操作中完成动画的执行。</p>
 
-          
-        
       
     </div>
     
@@ -621,167 +352,32 @@ public static final int FLAG_DISMISS_KEYGUARD = 0x00400000;
       
 
       
-
-      
-
       
       
-        <div class="post-eof"></div>
+
       
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://qlrishui.github.io/qinlingrong.github.io/2017/03/17/初探Fragment/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="John Doe">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/qinlingrong.github.io/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/qinlingrong.github.io/2017/03/17/初探Fragment/" itemprop="url">Untitled</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
             
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">Posted on</span>
-              
-              <time title="Post created" itemprop="dateCreated datePublished" datetime="2017-03-17T01:08:09+08:00">
-                2017-03-17
-              </time>
+              <a href="/qinlingrong.github.io/2017/03/17/初探Fragment/" rel="next" title="">
+                <i class="fa fa-chevron-left"></i> 
+              </a>
             
+          </div>
 
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
             
-
+              <a href="/qinlingrong.github.io/2018/02/27/android屏幕解锁新解/" rel="prev" title="">
+                 <i class="fa fa-chevron-right"></i>
+              </a>
             
-          </span>
-
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
+          </div>
         </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
       
 
       
-        
-          
-            <h1 id="初探Fragment"><a href="#初探Fragment" class="headerlink" title="初探Fragment"></a>初探Fragment</h1><h2 id="Fragment是什么"><a href="#Fragment是什么" class="headerlink" title="Fragment是什么"></a>Fragment是什么</h2><ul>
-<li>Fragmeng简介： </li>
-</ul>
-<p>自从Android 3.0中引入fragments 的概念,根据词海的翻译可以译为:碎片、片段。其上的是为了解决不同屏幕分辩率的动态和灵活UI设计。大屏幕如平板小屏幕如手机，平板电脑的设计使得其有更多的空间来放更多的UI组件，而多出来的空间存放UI使其会产生更多的交互，从而诞生了fragments 。fragments 的设计不需要你来亲自管理view hierarchy 的复杂变化，通过将Activity 的布局分散到frament 中，可以在运行时修改activity 的外观，并且由activity 管理的back stack 中保存些变化。</p>
-<ul>
-<li>Fragmeng优点：</li>
-</ul>
-<p>Fragment可以使你能够将activity分离成多个可重用的组件，每个都有它自己的生命周期和UI。</p>
-<p>Fragment可以轻松得创建动态灵活的UI设计，可以适应于不同的屏幕尺寸。从手机到平板电脑。</p>
-<p>Fragment是一个独立的模块,紧紧地与activity绑定在一起。可以运行中动态地移除、加入、交换等。</p>
-<p>Fragment提供一个新的方式让你在不同的安卓设备上统一你的UI。</p>
-<p>Fragment 解决Activity间的切换不流畅，轻量切换。</p>
-<p>Fragment 替代TabActivity做导航，性能更好。</p>
-<p>Fragment 在4.2.版本中新增嵌套fragmeng使用方法，能够生成更好的界面效果。</p>
-<p>Fragment做局部内容更新更方便，原来为了到达这一点要把多个布局放到一个activity里面，现在可以用多Fragment来代替，只有在需要的时候才加载Fragment，提高性能</p>
-<ul>
-<li>Fragmeng使用</li>
-</ul>
-<ol>
-<li>两种添加方法</li>
-</ol>
-<p>在activity的layout文件中显式的添加一个fragment</p>
-<p>通过代码将fragment添加到一个已存在的ViewGroup，例如viewpager或者一个FrameLayout</p>
-<ol>
-<li>Fragmeng与Activity交互</li>
-</ol>
-<p>Fragmeng通过getActivity()获得所在Activity上下文,需要注意的是getAcitivy()有可能为空</p>
-<p>解决办法：</p>
-<p>更”安全”的方法：(对于Fragment已经onDetach这种情况，我们应该避免在这之后再去调用宿主Activity对象，比如取消这些异步任务，但我们的团队可能会有粗心大意的情况，所以下面给出的这个方案会保证安全)<br>在Fragment基类里设置一个Activity mActivity的全局变量，在onAttach(Activity activity)里赋值，使用mActivity代替getActivity()，保证Fragment即使在onDetach后，仍持有Activity的引用（有引起内存泄露的风险，但是异步任务没停止的情况下，本身就可能已内存泄漏，相比Crash，这种做法“安全”些），即：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">protected Activity mActivity;</span><br><span class="line">@Override</span><br><span class="line">public void onAttach(Activity activity) &#123;</span><br><span class="line">    super.onAttach(activity);</span><br><span class="line">    this.mActivity = activity;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line">*  如果你用了support 23的库，上面的方法会提示过时，有强迫症的小伙伴，可以用下面的方法代替</span><br><span class="line">*/</span><br><span class="line">@Override</span><br><span class="line">public void onAttach(Context context) &#123;</span><br><span class="line">    super.onAttach(context);</span><br><span class="line">    this.mActivity = (Activity)context;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>Activity通过getFragmentManager()获得Fragmeng实例(findFragmentById,findFragmentByTag);</p>
-<p>通过FragmentTransaction可以增加、移除或者代替Fragments；</p>
-<p>通过fragmentTransaction.addToBackStack()可以把fragmeng保存到栈，响应后退按钮；</p>
-<p>Activity与fragment相互调用方法接口还可以通过Activity的<code>onAttachFragment</code>方法获得fragment的实例从而调用fragment的接口方法，而fragment可以通过<code>onAttach</code>获得父Acitivy的实例来调用相应的方法接口。如下：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">import android.app.Fragment;</span><br><span class="line">/**</span><br><span class="line"> * @author:zhangqian</span><br><span class="line"> * @time:2017/3/17</span><br><span class="line"> */</span><br><span class="line"></span><br><span class="line">public class TestActivity extends Activity &#123;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">    private FragmentListener listener;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void onAttachFragment(Fragment fragment) &#123;</span><br><span class="line"></span><br><span class="line">        try &#123;</span><br><span class="line">            if(fragment instanceof TestFragment)&#123;</span><br><span class="line">                listener = (TestFragment)fragment;</span><br><span class="line">                listener.todo();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;catch (Exception e)&#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">        super.onAttachFragment(fragment);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * @author:zhangqian</span><br><span class="line"> * @time:2017/3/17</span><br><span class="line"> */</span><br><span class="line"></span><br><span class="line">public class TestFragment extends Fragment implements FragmentListener &#123;</span><br><span class="line"></span><br><span class="line">    private MainActivity mActivity;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void onAttach(Context context) &#123;</span><br><span class="line">        super.onAttach(context);</span><br><span class="line">        mActivity = (MainActivity) context;</span><br><span class="line">        mActivity.getData();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void todo() &#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
       
     </footer>
   </div>
@@ -791,10 +387,11 @@ public static final int FLAG_DISMISS_KEYGUARD = 0x00400000;
   </article>
 
 
-    
-  </section>
 
-  
+    <div class="post-spread">
+      
+    </div>
+  </div>
 
 
           </div>
@@ -802,6 +399,10 @@ public static final int FLAG_DISMISS_KEYGUARD = 0x00400000;
 
 
           
+
+  
+
+
 
         </div>
         
@@ -998,6 +599,10 @@ public static final int FLAG_DISMISS_KEYGUARD = 0x00400000;
   
 
   
+  <script type="text/javascript" src="/qinlingrong.github.io/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/qinlingrong.github.io/js/src/post-details.js?v=5.1.4"></script>
+
+
 
   
 
